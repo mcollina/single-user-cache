@@ -1,0 +1,190 @@
+'use strict'
+
+const { test } = require('tap')
+const { buildSchema, graphql } = require('graphql')
+const { Factory } = require('.')
+const { makeExecutableSchema } = require('graphql-tools')
+
+test('create a Factory that batches', async (t) => {
+  const factory = new Factory()
+
+  factory.add('fetchSomething', async (queries) => {
+    t.deepEqual(queries, [
+      42, 24
+    ])
+    return queries.map((k) => {
+      return { k }
+    })
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(24)
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 24 }
+  ])
+})
+
+test('create a Factory that dedupes the queries', async (t) => {
+  const factory = new Factory()
+
+  factory.add('fetchSomething', async (queries) => {
+    t.deepEqual(queries, [42])
+    return [{ k: 42 }]
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(42)
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 42 }
+  ])
+})
+
+test('create a Factory that dedupes the queries after resolution', async (t) => {
+  t.plan(3)
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', async (queries) => {
+    // this tests verifies that the callback is called only once
+    t.deepEqual(queries, [42])
+    return [{ k: 42 }]
+  })
+
+  const cache = factory.create()
+
+  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+})
+
+test('works with GQL', async (t) => {
+  const schema = buildSchema(`
+    type Person {
+      id: String!
+      name: String!
+      friends: [Person]
+    }
+
+    type Query {
+      allPeople: [Person]
+    }
+  `)
+
+  const factory = new Factory()
+
+  factory.add('allPeople', async (_, ctx) => {
+    // The external array is needed to match the unwanted, single id.
+    return [
+      [{
+        id: '42',
+        name: 'matteo',
+        friends: cache.fetchFriends.bind(cache, '42', ctx)
+      }, {
+        id: '24',
+        name: 'marco',
+        friends: cache.fetchFriends.bind(cache, '24', ctx)
+      }]
+    ]
+  })
+
+  factory.add('fetchFriends', async (ids, ctx) => {
+    // this tests verifies that the callback is called only once
+    t.deepEqual(ids, ['42', '24'])
+
+    return [[{
+      id: '24',
+      name: 'marco',
+      friends: cache.fetchFriends.bind(cache, '24', ctx)
+    }], [{
+      id: '42',
+      name: 'matteo',
+      friends: cache.fetchFriends.bind(cache, '42', ctx)
+    }]]
+  })
+
+  const root = {
+    async allPeople (_, ctx) {
+      return ctx.cache.allPeople()
+    }
+  }
+
+  const cache = factory.create()
+
+  const data = await graphql(schema, `{
+    allPeople {
+      name,
+      friends {
+        name
+      }
+    }
+  }`, root, {
+    cache
+  })
+
+  t.deepEqual(data, {
+    'data': {
+      'allPeople': [
+        {
+          'name': 'matteo',
+          'friends': [
+            {
+              'name': 'marco'
+            }
+          ]
+        },
+        {
+          'name': 'marco',
+          'friends': [
+            {
+              'name': 'matteo'
+            }
+          ]
+        }
+      ]
+    }
+  })
+})
+
+test('cache makeSchemaExecutable', async (t) => {
+  const factory = new Factory()
+
+  factory.add('fetchSomething', async (queries) => {
+    t.deepEqual(queries, [42])
+    return [42]
+  })
+
+  const typeDefs = `
+    type Query {
+      fetchSomething(x: Int): Int
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      fetchSomething: (_, { x }, { cache }) => {
+        return cache.fetchSomething(x)
+      }
+    }
+  }
+
+  const schema = makeExecutableSchema({ typeDefs, resolvers })
+
+  const query = '{ fetchSomething(x: 42) }'
+  const res = await graphql(schema, query, {}, { cache: factory.create() })
+  t.deepEqual(res, {
+    data: {
+      fetchSomething: 42
+    }
+  })
+})
