@@ -6,6 +6,9 @@ const { Factory } = require('.')
 const { makeExecutableSchema } = require('graphql-tools')
 
 test('create a Factory that batches', async (t) => {
+  // plan verifies that fetchSomething is called only once
+  t.plan(2)
+
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {

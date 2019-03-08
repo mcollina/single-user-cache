@@ -1,18 +1,5 @@
-# single-user-cache
+'use strict'
 
-[![Build Status](https://travis-ci.com/mcollina/single-user-cache.svg?branch=master)](https://travis-ci.com/mcollina/single-user-cache)
-
-A simple cache system for a single user request, built on the same concepts of [data loader](https://github.com/facebook/dataloader).
-
-## Install
-
-```js
-npm i single-user-cache
-```
-
-## Usage
-
-```js
 const { Factory } = require('.')
 const factory = new Factory()
 
@@ -41,8 +28,3 @@ async function run () {
 }
 
 run().catch(console.log)
-```
-
-## License
-
-MIT
