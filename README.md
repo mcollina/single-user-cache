@@ -16,9 +16,12 @@ npm i single-user-cache
 const { Factory } = require('.')
 const factory = new Factory()
 
-factory.add('fetchSomething', async (queries) => {
+factory.add('fetchSomething', async (queries, context) => {
   console.log(queries)
   // [ 42, 24 ]
+
+  console.log(context)
+  // { some: 'data' }
 
   return queries.map((k) => {
     return { k }
@@ -26,7 +29,10 @@ factory.add('fetchSomething', async (queries) => {
 })
 
 async function run () {
-  const cache = factory.create()
+  const context = {
+    some: 'data'
+  }
+  const cache = factory.create(context)
 
   const p1 = cache.fetchSomething(42)
   const p2 = cache.fetchSomething(24)

@@ -15,29 +15,31 @@ class Factory {
 
     this.Cache.prototype[key] = function (id) {
       if (!this[kValues][key]) {
-        this[kValues][key] = new Wrapper()
+        this[kValues][key] = new Wrapper(this.ctx)
       }
       return this[kValues][key].add(id)
     }
   }
 
-  create () {
-    return new this.Cache()
+  create (ctx) {
+    return new this.Cache(ctx)
   }
 }
 
 class _Cache {
-  constructor () {
+  constructor (ctx) {
     this[kValues] = {}
+    this.ctx = ctx
   }
 }
 
 class _Wrapper {
-  constructor () {
+  constructor (ctx) {
     this.ids = {}
     this.toFetch = []
     this.error = null
     this.started = false
+    this.ctx = ctx
   }
 
   add (id) {
@@ -66,7 +68,7 @@ class _Wrapper {
       const toFetch = this.toFetch
       this.toFetch = []
 
-      this.func(toFetch.map((q) => q.id)).then((data) => {
+      this.func(toFetch.map((q) => q.id), this.ctx).then((data) => {
         if (!Array.isArray(data) && data.length !== toFetch.length) {
           onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
           return

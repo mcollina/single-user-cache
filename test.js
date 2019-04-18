@@ -191,3 +191,30 @@ test('cache makeSchemaExecutable', async (t) => {
     }
   })
 })
+
+test('support context', async (t) => {
+  // plan verifies that fetchSomething is called only once
+  t.plan(2)
+
+  const factory = new Factory()
+  const expectedCtx = {}
+
+  factory.add('fetchSomething', async (queries, ctx) => {
+    t.equal(ctx, expectedCtx)
+    return queries.map((k) => {
+      return { k }
+    })
+  })
+
+  const cache = factory.create(expectedCtx)
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(24)
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 24 }
+  ])
+})
