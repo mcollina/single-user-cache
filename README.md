@@ -52,6 +52,10 @@ async function run () {
 run().catch(console.log)
 ```
 
+If the query parameter is an object, its cache key will be generated
+using
+[safe-stable-stringify](https://github.com/BridgeAR/safe-stable-stringify).
+
 ## License
 
 MIT

@@ -234,3 +234,26 @@ test('cache: false', async (t) => {
   t.deepEqual(await cache.fetchSomething(42), { k: 42 })
   t.deepEqual(await cache.fetchSomething(42), { k: 42 })
 })
+
+test('works with objects', async (t) => {
+  // plan verifies that fetchSomething is called only once
+  t.plan(1)
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', async (queries) => {
+    return queries
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething({ k: 42 })
+  const p2 = cache.fetchSomething({ k: 24 })
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 24 }
+  ])
+})

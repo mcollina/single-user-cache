@@ -21,5 +21,8 @@
     "snazzy": "^8.0.0",
     "standard": "^12.0.1",
     "tap": "^12.6.0"
+  },
+  "dependencies": {
+    "safe-stable-stringify": "^1.1.0"
   }
 }

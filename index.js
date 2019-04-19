@@ -1,6 +1,7 @@
 'use strict'
 
 const kValues = Symbol('values')
+const stringify = require('safe-stable-stringify')
 
 class Factory {
   constructor () {
@@ -49,15 +50,16 @@ class _Wrapper {
   }
 
   add (id) {
-    if (this.ids[id]) {
-      return this.ids[id].promise
+    const key = typeof id === 'string' ? id : stringify(id)
+    if (this.ids[key]) {
+      return this.ids[key].promise
     }
 
     this.start()
 
     const query = new Query(id)
     if (this.cache) {
-      this.ids[id] = query
+      this.ids[key] = query
     }
     this.toFetch.push(query)
 
