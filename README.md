@@ -16,7 +16,10 @@ npm i single-user-cache
 const { Factory } = require('.')
 const factory = new Factory()
 
-factory.add('fetchSomething', async (queries, context) => {
+factory.add('fetchSomething', {
+  // cache by default, set to false to just do batching
+  cache: true
+}, async (queries, context) => {
   console.log(queries)
   // [ 42, 24 ]
 

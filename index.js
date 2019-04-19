@@ -7,7 +7,12 @@ class Factory {
     this.Cache = class Cache extends _Cache {}
   }
 
-  add (key, func) {
+  add (key, opts, func) {
+    if (typeof opts === 'function') {
+      func = opts
+      opts = {}
+    }
+
     class Wrapper extends _Wrapper {}
 
     Wrapper.prototype.func = func
@@ -15,7 +20,7 @@ class Factory {
 
     this.Cache.prototype[key] = function (id) {
       if (!this[kValues][key]) {
-        this[kValues][key] = new Wrapper(this.ctx)
+        this[kValues][key] = new Wrapper(this.ctx, opts.cache)
       }
       return this[kValues][key].add(id)
     }
@@ -34,12 +39,13 @@ class _Cache {
 }
 
 class _Wrapper {
-  constructor (ctx) {
+  constructor (ctx, cache = true) {
     this.ids = {}
     this.toFetch = []
     this.error = null
     this.started = false
     this.ctx = ctx
+    this.cache = cache
   }
 
   add (id) {
@@ -50,7 +56,9 @@ class _Wrapper {
     this.start()
 
     const query = new Query(id)
-    this.ids[id] = query
+    if (this.cache) {
+      this.ids[id] = query
+    }
     this.toFetch.push(query)
 
     return query.promise

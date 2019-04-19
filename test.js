@@ -218,3 +218,19 @@ test('support context', async (t) => {
     { k: 24 }
   ])
 })
+
+test('cache: false', async (t) => {
+  t.plan(4)
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', { cache: false }, async (queries) => {
+    t.deepEqual(queries, [42])
+    return [{ k: 42 }]
+  })
+
+  const cache = factory.create()
+
+  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+})
