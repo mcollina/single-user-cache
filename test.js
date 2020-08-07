@@ -257,3 +257,41 @@ test('works with objects', async (t) => {
     { k: 24 }
   ])
 })
+
+test('add data validation', async (t) => {
+  const factory = new Factory()
+
+  t.throws(() => {
+    factory.add('fetchSomething', null, null)
+  }, new TypeError('Missing the function parameter for \'fetchSomething\''))
+
+  t.end()
+})
+
+test('create a Factory that batches with null options', async (t) => {
+  // plan verifies that fetchSomething is called only once
+  t.plan(2)
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', null, async (queries) => {
+    t.deepEqual(queries, [
+      42, 24
+    ])
+    return queries.map((k) => {
+      return { k }
+    })
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(24)
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 24 }
+  ])
+})

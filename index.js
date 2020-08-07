@@ -14,6 +14,12 @@ class Factory {
       opts = {}
     }
 
+    if (typeof func !== 'function') {
+      throw new TypeError(`Missing the function parameter for '${key}'`)
+    }
+
+    opts = opts || {}
+
     class Wrapper extends _Wrapper {}
 
     Wrapper.prototype.func = func
