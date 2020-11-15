@@ -84,7 +84,7 @@ class _Wrapper {
       const toFetch = this.toFetch
       this.toFetch = []
 
-      this.func(toFetch.map((q) => q.id), this.ctx).then((data) => {
+      Promise.resolve(this.func(toFetch.map((q) => q.id), this.ctx)).then((data) => {
         if (!Array.isArray(data) && data.length !== toFetch.length) {
           onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
           return
