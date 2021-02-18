@@ -4,8 +4,15 @@ const kValues = Symbol('values')
 const stringify = require('safe-stable-stringify')
 
 class Factory {
-  constructor () {
+  constructor (serialize) {
     this.Cache = class Cache extends _Cache {}
+
+    if (serialize && typeof serialize !== 'function') {
+      throw new TypeError('serialize should be a function')
+    }
+
+    this.serialize = serialize
+    console.log(this.serialize)
   }
 
   add (key, opts, func) {
@@ -25,10 +32,16 @@ class Factory {
     Wrapper.prototype.func = func
     Wrapper.prototype.key = key
 
+    const serialize = this.serialize
     this.Cache.prototype[key] = function (id) {
       if (!this[kValues][key]) {
         this[kValues][key] = new Wrapper(this.ctx, opts.cache)
       }
+
+      if (serialize) {
+        id = serialize(id)
+      }
+
       return this[kValues][key].add(id)
     }
   }
