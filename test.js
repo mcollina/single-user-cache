@@ -5,6 +5,8 @@ const { buildSchema, graphql } = require('graphql')
 const { Factory } = require('.')
 const { makeExecutableSchema } = require('graphql-tools')
 
+const kValues = require('./symbol')
+
 test('create a Factory that batches', async (t) => {
   // plan verifies that fetchSomething is called only once
   t.plan(2)
@@ -294,4 +296,33 @@ test('create a Factory that batches with null options', async (t) => {
     { k: 42 },
     { k: 24 }
   ])
+})
+
+test('works with custom serialize', async (t) => {
+  // plan verifies that fetchSomething is called only once
+  t.plan(2)
+
+  const factory = new Factory()
+
+  factory.add(
+    'fetchSomething',
+    async (queries) => {
+      return queries
+    },
+    args => args.k
+  )
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething({ k: 42 })
+  const p2 = cache.fetchSomething({ k: 24 })
+
+  const res = await Promise.all([p1, p2])
+
+  t.deepEqual(res, [
+    { k: 42 },
+    { k: 24 }
+  ])
+
+  t.deepEqual(Object.keys(cache[kValues].fetchSomething.ids), [ '24', '42' ])
 })
