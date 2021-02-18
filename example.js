@@ -1,7 +1,7 @@
 'use strict'
 
 const { Factory } = require('.')
-const factory = new Factory((id) => id + 1)
+const factory = new Factory()
 
 factory.add('fetchSomething', async (queries) => {
   console.log(queries)
