@@ -1,6 +1,6 @@
 'use strict'
 
-const kValues = Symbol('values')
+const kValues = require('./symbol')
 const stringify = require('safe-stable-stringify')
 
 class Factory {
@@ -8,8 +8,9 @@ class Factory {
     this.Cache = class Cache extends _Cache {}
   }
 
-  add (key, opts, func) {
+  add (key, opts, func, serialize) {
     if (typeof opts === 'function') {
+      serialize = func
       func = opts
       opts = {}
     }
@@ -18,12 +19,17 @@ class Factory {
       throw new TypeError(`Missing the function parameter for '${key}'`)
     }
 
+    if (serialize && typeof serialize !== 'function') {
+      throw new TypeError('serialize must be a function')
+    }
+
     opts = opts || {}
 
     class Wrapper extends _Wrapper {}
 
     Wrapper.prototype.func = func
     Wrapper.prototype.key = key
+    Wrapper.prototype.serialize = serialize
 
     this.Cache.prototype[key] = function (id) {
       if (!this[kValues][key]) {
@@ -55,7 +61,8 @@ class _Wrapper {
     this.cache = cache
   }
 
-  add (id) {
+  add (args) {
+    const id = this.serialize ? this.serialize(args) : args
     const key = typeof id === 'string' ? id : stringify(id)
     if (this.ids[key]) {
       return this.ids[key].promise
@@ -63,12 +70,11 @@ class _Wrapper {
 
     this.start()
 
-    const query = new Query(id)
+    const query = new Query(id, args)
     if (this.cache) {
       this.ids[key] = query
     }
     this.toFetch.push(query)
-
     return query.promise
   }
 
@@ -84,7 +90,7 @@ class _Wrapper {
       const toFetch = this.toFetch
       this.toFetch = []
 
-      this.func(toFetch.map((q) => q.id), this.ctx).then((data) => {
+      this.func(toFetch.map((q) => q.args), this.ctx).then((data) => {
         if (!Array.isArray(data) && data.length !== toFetch.length) {
           onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
           return
@@ -104,11 +110,12 @@ class _Wrapper {
 }
 
 class Query {
-  constructor (id) {
+  constructor (id, args) {
     // ease the work to V8, define the fields beforehand
     this.resolve = null
     this.reject = null
     this.id = id
+    this.args = args
 
     this.promise = new Promise((resolve, reject) => {
       this.resolve = resolve
