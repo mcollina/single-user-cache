@@ -6,6 +6,10 @@
   "scripts": {
     "test": "standard | snazzy && tap test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcollina/single-user-cache.git"
+  },
   "keywords": [
     "cache",
     "single",
