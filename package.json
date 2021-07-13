@@ -22,7 +22,7 @@
     "graphql": "^15.0.0",
     "graphql-tools": "^7.0.5",
     "@fastify/pre-commit": "^2.0.0",
-    "snazzy": "^8.0.0",
+    "snazzy": "^9.0.0",
     "standard": "^16.0.0",
     "tap": "^15.0.9"
   },
