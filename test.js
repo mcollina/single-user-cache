@@ -14,7 +14,7 @@ test('create a Factory that batches', async (t) => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.deepEqual(queries, [
+    t.same(queries, [
       42, 24
     ])
     return queries.map((k) => {
@@ -29,7 +29,7 @@ test('create a Factory that batches', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 24 }
   ])
@@ -39,7 +39,7 @@ test('create a Factory that dedupes the queries', async (t) => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.deepEqual(queries, [42])
+    t.same(queries, [42])
     return [{ k: 42 }]
   })
 
@@ -50,7 +50,7 @@ test('create a Factory that dedupes the queries', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 42 }
   ])
@@ -63,14 +63,14 @@ test('create a Factory that dedupes the queries after resolution', async (t) => 
 
   factory.add('fetchSomething', async (queries) => {
     // this tests verifies that the callback is called only once
-    t.deepEqual(queries, [42])
+    t.same(queries, [42])
     return [{ k: 42 }]
   })
 
   const cache = factory.create()
 
-  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
-  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  t.same(await cache.fetchSomething(42), { k: 42 })
+  t.same(await cache.fetchSomething(42), { k: 42 })
 })
 
 test('works with GQL', async (t) => {
@@ -105,7 +105,7 @@ test('works with GQL', async (t) => {
 
   factory.add('fetchFriends', async (ids, ctx) => {
     // this tests verifies that the callback is called only once
-    t.deepEqual(ids, ['42', '24'])
+    t.same(ids, ['42', '24'])
 
     return [[{
       id: '24',
@@ -137,22 +137,22 @@ test('works with GQL', async (t) => {
     cache
   })
 
-  t.deepEqual(data, {
-    'data': {
-      'allPeople': [
+  t.same(data, {
+    data: {
+      allPeople: [
         {
-          'name': 'matteo',
-          'friends': [
+          name: 'matteo',
+          friends: [
             {
-              'name': 'marco'
+              name: 'marco'
             }
           ]
         },
         {
-          'name': 'marco',
-          'friends': [
+          name: 'marco',
+          friends: [
             {
-              'name': 'matteo'
+              name: 'matteo'
             }
           ]
         }
@@ -165,7 +165,7 @@ test('cache makeSchemaExecutable', async (t) => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.deepEqual(queries, [42])
+    t.same(queries, [42])
     return [42]
   })
 
@@ -187,7 +187,7 @@ test('cache makeSchemaExecutable', async (t) => {
 
   const query = '{ fetchSomething(x: 42) }'
   const res = await graphql(schema, query, {}, { cache: factory.create() })
-  t.deepEqual(res, {
+  t.same(res, {
     data: {
       fetchSomething: 42
     }
@@ -215,7 +215,7 @@ test('support context', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 24 }
   ])
@@ -227,14 +227,14 @@ test('cache: false', async (t) => {
   const factory = new Factory()
 
   factory.add('fetchSomething', { cache: false }, async (queries) => {
-    t.deepEqual(queries, [42])
+    t.same(queries, [42])
     return [{ k: 42 }]
   })
 
   const cache = factory.create()
 
-  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
-  t.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  t.same(await cache.fetchSomething(42), { k: 42 })
+  t.same(await cache.fetchSomething(42), { k: 42 })
 })
 
 test('works with objects', async (t) => {
@@ -254,7 +254,7 @@ test('works with objects', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 24 }
   ])
@@ -277,7 +277,7 @@ test('create a Factory that batches with null options', async (t) => {
   const factory = new Factory()
 
   factory.add('fetchSomething', null, async (queries) => {
-    t.deepEqual(queries, [
+    t.same(queries, [
       42, 24
     ])
     return queries.map((k) => {
@@ -292,7 +292,7 @@ test('create a Factory that batches with null options', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 24 }
   ])
@@ -319,10 +319,10 @@ test('works with custom serialize', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.deepEqual(res, [
+  t.same(res, [
     { k: 42 },
     { k: 24 }
   ])
 
-  t.deepEqual(Object.keys(cache[kValues].fetchSomething.ids), [ '24', '42' ])
+  t.same(Object.keys(cache[kValues].fetchSomething.ids), ['24', '42'])
 })

@@ -95,13 +95,13 @@ class _Wrapper {
           onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
           return
         }
-        for (var i = 0; i < toFetch.length; i++) {
+        for (let i = 0; i < toFetch.length; i++) {
           toFetch[i].resolve(data[i])
         }
       }, onError)
 
       function onError (err) {
-        for (var i = 0; i < toFetch.length; i++) {
+        for (let i = 0; i < toFetch.length; i++) {
           toFetch[i].reject(err)
         }
       }
