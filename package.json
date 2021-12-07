@@ -19,7 +19,7 @@
   "author": "Matteo Collina <hello@matteocollina.com>",
   "license": "MIT",
   "devDependencies": {
-    "graphql": "^15.0.0",
+    "graphql": "^16.1.0",
     "graphql-tools": "^8.0.0",
     "@fastify/pre-commit": "^2.0.0",
     "snazzy": "^9.0.0",
