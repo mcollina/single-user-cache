@@ -1,11 +1,11 @@
 'use strict'
 
 const { test } = require('tap')
-const { buildSchema, graphql } = require('graphql')
+const { graphql, buildSchema } = require('graphql')
 const { Factory } = require('.')
-const { makeExecutableSchema } = require('graphql-tools')
 
 const kValues = require('./symbol')
+const { makeExecutableSchema } = require('@graphql-tools/schema')
 
 test('create a Factory that batches', async (t) => {
   // plan verifies that fetchSomething is called only once
@@ -126,15 +126,11 @@ test('works with GQL', async (t) => {
 
   const cache = factory.create()
 
-  const data = await graphql(schema, `{
-    allPeople {
-      name,
-      friends {
-        name
-      }
-    }
-  }`, root, {
-    cache
+  const data = await graphql({
+    schema,
+    source: '{ allPeople { name, friends { name } } }',
+    rootValue: root,
+    contextValue: { cache }
   })
 
   t.same(data, {
@@ -186,7 +182,14 @@ test('cache makeSchemaExecutable', async (t) => {
   const schema = makeExecutableSchema({ typeDefs, resolvers })
 
   const query = '{ fetchSomething(x: 42) }'
-  const res = await graphql(schema, query, {}, { cache: factory.create() })
+
+  const res = await graphql({
+    schema,
+    source: query,
+    rootValue: {},
+    contextValue: { cache: factory.create() }
+  })
+
   t.same(res, {
     data: {
       fetchSomething: 42
