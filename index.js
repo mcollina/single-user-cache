@@ -54,7 +54,7 @@ class _Cache {
 class _Wrapper {
   constructor (ctx, cache = true) {
     this.ids = {}
-    this.toFetch = []
+    this.toFetch = new Map()
     this.error = null
     this.started = false
     this.ctx = ctx
@@ -68,13 +68,19 @@ class _Wrapper {
       return this.ids[key].promise
     }
 
-    this.start()
+    // already started
+    if (!this.start()) {
+      const q = this.toFetch.get(key)
+      if (q) {
+        return q.promise
+      }
+    }
 
     const query = new Query(id, args)
     if (this.cache) {
       this.ids[key] = query
     }
-    this.toFetch.push(query)
+    this.toFetch.set(key, query)
     return query.promise
   }
 
@@ -87,8 +93,8 @@ class _Wrapper {
     // Needed to escape the promise context.
     process.nextTick(() => {
       this.started = false
-      const toFetch = this.toFetch
-      this.toFetch = []
+      const toFetch = Array.from(this.toFetch.values())
+      this.toFetch = new Map()
 
       this.func(toFetch.map((q) => q.args), this.ctx).then((data) => {
         if (!Array.isArray(data) && data.length !== toFetch.length) {
@@ -106,6 +112,8 @@ class _Wrapper {
         }
       }
     })
+
+    return true
   }
 }
 
