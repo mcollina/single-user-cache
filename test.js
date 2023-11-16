@@ -1,5 +1,6 @@
 'use strict'
 
+const { setTimeout } = require('node:timers/promises')
 const { test } = require('tap')
 const { graphql, buildSchema } = require('graphql')
 const { Factory } = require('.')
@@ -328,4 +329,64 @@ test('works with custom serialize', async (t) => {
   ])
 
   t.same(Object.keys(cache[kValues].fetchSomething.ids), ['24', '42'])
+})
+
+test('works with same args', async (t) => {
+  const factory = new Factory()
+
+  factory.add('mul10', async (queries) => queries.map(q => q * 10))
+
+  const cache = factory.create()
+
+  const r = await Promise.all([
+    cache.mul10(1),
+    cache.mul10(2),
+    cache.mul10(1),
+    cache.mul10(3),
+    cache.mul10(2),
+    cache.mul10(2),
+    cache.mul10(1),
+    cache.mul10(3)
+  ])
+
+  t.same(r, [10, 20, 10, 30, 20, 20, 10, 30])
+})
+
+test('concurrent requests without cache', async (t) => {
+  const factory = new Factory()
+  const users = { 1: 'Alice', 2: 'Barbara' }
+
+  let calls = 0
+  let batch
+  factory.add('slowQuery', { cache: false }, async (queries) => {
+    calls++
+    await setTimeout(250)
+    batch = queries.length
+    return queries.map(q => users[q.id])
+  })
+
+  const loader = factory.create()
+
+  const r = await Promise.all([
+    Promise.all([
+      loader.slowQuery({ id: 1 }),
+      loader.slowQuery({ id: 2 }),
+      loader.slowQuery({ id: 3 }),
+      loader.slowQuery({ id: 1 }),
+      loader.slowQuery({ id: 2 }),
+      loader.slowQuery({ id: 3 })
+    ]),
+    Promise.all([
+      loader.slowQuery({ id: 1 }),
+      loader.slowQuery({ id: 2 }),
+      loader.slowQuery({ id: 3 }),
+      loader.slowQuery({ id: 1 }),
+      loader.slowQuery({ id: 2 }),
+      loader.slowQuery({ id: 3 })
+    ])
+  ])
+
+  t.equal(calls, 1)
+  t.equal(batch, 3)
+  t.same(r, [['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined], ['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined]])
 })
