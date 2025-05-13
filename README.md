@@ -54,6 +54,28 @@ If the query parameter is an object, its cache key will be generated
 using
 [safe-stable-stringify](https://github.com/BridgeAR/safe-stable-stringify).
 
+## Benchmarks
+
+Compared to [dataloader](http://npm.im/dataloader), this library is significantly
+faster.
+
+```
+➜  node benchmark.js
+clk: ~4.21 GHz
+cpu: Apple M4 Max
+runtime: node 22.15.0 (arm64-darwin)
+
+benchmark                   avg (min … max) p75 / p99    (min … top 1%)
+------------------------------------------- -------------------------------
+dataloader                     1.09 ms/iter   1.30 ms  █
+                      (718.92 µs … 2.04 ms)   1.72 ms  █      ▄▂
+                    (  2.81 mb …   6.82 mb)   6.73 mb ██▆▂▁▁▂███▇▆▇▅▄▆▂▃▃▃▁
+
+single-user-cache            345.48 µs/iter 337.71 µs  ▄▇█
+                    (297.83 µs … 601.96 µs) 526.33 µs ████▃
+                    (  1.20 mb …   2.08 mb)   1.85 mb █████▃▁▁▁▁▁▁▁▁▁▁▂▄▅▅▂
+```
+
 ## License
 
 MIT

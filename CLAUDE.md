@@ -41,6 +41,38 @@ To run a specific test:
 node --test --test-name-pattern="test name pattern" test.js
 ```
 
+### Running Benchmarks
+
+To run benchmarks comparing single-user-cache with dataloader:
+
+1. Install dataloader as a dev dependency:
+   ```bash
+   npm install --no-save dataloader
+   ```
+
+2. Run the benchmark script:
+   ```bash
+   node benchmark.js
+   ```
+
+The benchmark compares the performance of single-user-cache against dataloader under similar batch loading conditions, measuring operations per second and performance statistics.
+
+#### Benchmark Configuration
+
+The benchmark in `benchmark.js` is configured with:
+- 1000 possible items to fetch
+- 10000 concurrent requests
+- 10ms simulated database delay
+- Both loaders configured to use caching
+
+#### Interpreting Results
+
+The output shows:
+- Operations per second (higher is better)
+- P75, P99, and P995 percentiles 
+- Min/max execution times
+- Average execution time
+
 ## Key Features
 
 1. **Query Batching**: Collects individual queries made in the same tick and batches them into a single request.
