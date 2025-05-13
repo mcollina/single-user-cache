@@ -1,4 +1,0 @@
-check-coverage: false
-jsx: false
-ts: false
-flow: false
