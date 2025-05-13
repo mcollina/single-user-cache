@@ -1,23 +1,22 @@
 'use strict'
 
 const { setTimeout } = require('node:timers/promises')
-const { test } = require('tap')
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
 const { graphql, buildSchema } = require('graphql')
 const { Factory } = require('.')
 
 const kValues = require('./symbol')
 const { makeExecutableSchema } = require('@graphql-tools/schema')
 
-test('create a Factory that batches', async (t) => {
-  // plan verifies that fetchSomething is called only once
-  t.plan(2)
+test('create a Factory that batches', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.same(queries, [
-      42, 24
-    ])
+    functionCalled++
+    assert.deepEqual(queries, [42, 24])
     return queries.map((k) => {
       return { k }
     })
@@ -30,17 +29,18 @@ test('create a Factory that batches', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 24 }
   ])
+  assert.equal(functionCalled, 1)
 })
 
-test('create a Factory that dedupes the queries', async (t) => {
+test('create a Factory that dedupes the queries', async () => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.same(queries, [42])
+    assert.deepEqual(queries, [42])
     return [{ k: 42 }]
   })
 
@@ -51,30 +51,32 @@ test('create a Factory that dedupes the queries', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 42 }
   ])
 })
 
-test('create a Factory that dedupes the queries after resolution', async (t) => {
-  t.plan(3)
+test('create a Factory that dedupes the queries after resolution', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
     // this tests verifies that the callback is called only once
-    t.same(queries, [42])
+    functionCalled++
+    assert.deepEqual(queries, [42])
     return [{ k: 42 }]
   })
 
   const cache = factory.create()
 
-  t.same(await cache.fetchSomething(42), { k: 42 })
-  t.same(await cache.fetchSomething(42), { k: 42 })
+  assert.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  assert.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  assert.equal(functionCalled, 1)
 })
 
-test('works with GQL', async (t) => {
+test('works with GQL', async () => {
   const schema = buildSchema(`
     type Person {
       id: String!
@@ -106,7 +108,7 @@ test('works with GQL', async (t) => {
 
   factory.add('fetchFriends', async (ids, ctx) => {
     // this tests verifies that the callback is called only once
-    t.same(ids, ['42', '24'])
+    assert.deepEqual(ids, ['42', '24'])
 
     return [[{
       id: '24',
@@ -134,35 +136,30 @@ test('works with GQL', async (t) => {
     contextValue: { cache }
   })
 
-  t.same(data, {
-    data: {
-      allPeople: [
-        {
-          name: 'matteo',
-          friends: [
-            {
-              name: 'marco'
-            }
-          ]
-        },
-        {
-          name: 'marco',
-          friends: [
-            {
-              name: 'matteo'
-            }
-          ]
-        }
-      ]
-    }
-  })
+  // Create expected result with null prototype objects to match GraphQL's output format
+  const expected = {}
+  expected.data = Object.create(null)
+  expected.data.allPeople = [
+    Object.create(null),
+    Object.create(null)
+  ]
+
+  expected.data.allPeople[0].name = 'matteo'
+  expected.data.allPeople[0].friends = [Object.create(null)]
+  expected.data.allPeople[0].friends[0].name = 'marco'
+
+  expected.data.allPeople[1].name = 'marco'
+  expected.data.allPeople[1].friends = [Object.create(null)]
+  expected.data.allPeople[1].friends[0].name = 'matteo'
+
+  assert.deepEqual(data, expected)
 })
 
-test('cache makeSchemaExecutable', async (t) => {
+test('cache makeSchemaExecutable', async () => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
-    t.same(queries, [42])
+    assert.deepEqual(queries, [42])
     return [42]
   })
 
@@ -191,22 +188,23 @@ test('cache makeSchemaExecutable', async (t) => {
     contextValue: { cache: factory.create() }
   })
 
-  t.same(res, {
-    data: {
-      fetchSomething: 42
-    }
-  })
+  // Create expected result with null prototype objects to match GraphQL's output format
+  const expected = {}
+  expected.data = Object.create(null)
+  expected.data.fetchSomething = 42
+
+  assert.deepEqual(res, expected)
 })
 
-test('support context', async (t) => {
-  // plan verifies that fetchSomething is called only once
-  t.plan(2)
+test('support context', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
   const expectedCtx = {}
 
   factory.add('fetchSomething', async (queries, ctx) => {
-    t.equal(ctx, expectedCtx)
+    functionCalled++
+    assert.equal(ctx, expectedCtx)
     return queries.map((k) => {
       return { k }
     })
@@ -219,32 +217,32 @@ test('support context', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 24 }
   ])
+  assert.equal(functionCalled, 1)
 })
 
-test('cache: false', async (t) => {
-  t.plan(4)
+test('cache: false', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
 
   factory.add('fetchSomething', { cache: false }, async (queries) => {
-    t.same(queries, [42])
+    functionCalled++
+    assert.deepEqual(queries, [42])
     return [{ k: 42 }]
   })
 
   const cache = factory.create()
 
-  t.same(await cache.fetchSomething(42), { k: 42 })
-  t.same(await cache.fetchSomething(42), { k: 42 })
+  assert.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  assert.deepEqual(await cache.fetchSomething(42), { k: 42 })
+  assert.equal(functionCalled, 2)
 })
 
-test('works with objects', async (t) => {
-  // plan verifies that fetchSomething is called only once
-  t.plan(1)
-
+test('works with objects', async () => {
   const factory = new Factory()
 
   factory.add('fetchSomething', async (queries) => {
@@ -258,30 +256,31 @@ test('works with objects', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 24 }
   ])
 })
 
-test('add data validation', async (t) => {
+test('add data validation', async () => {
   const factory = new Factory()
 
-  t.throws(() => {
+  assert.throws(() => {
     factory.add('fetchSomething', null, null)
-  }, new TypeError('Missing the function parameter for \'fetchSomething\''))
-
-  t.end()
+  }, {
+    name: 'TypeError',
+    message: 'Missing the function parameter for \'fetchSomething\''
+  })
 })
 
-test('create a Factory that batches with null options', async (t) => {
-  // plan verifies that fetchSomething is called only once
-  t.plan(2)
+test('create a Factory that batches with null options', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
 
   factory.add('fetchSomething', null, async (queries) => {
-    t.same(queries, [
+    functionCalled++
+    assert.deepEqual(queries, [
       42, 24
     ])
     return queries.map((k) => {
@@ -296,21 +295,22 @@ test('create a Factory that batches with null options', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 24 }
   ])
+  assert.equal(functionCalled, 1)
 })
 
-test('works with custom serialize', async (t) => {
-  // plan verifies that fetchSomething is called only once
-  t.plan(2)
+test('works with custom serialize', async () => {
+  let functionCalled = 0
 
   const factory = new Factory()
 
   factory.add(
     'fetchSomething',
     async (queries) => {
+      functionCalled++
       return queries
     },
     args => args.k
@@ -323,15 +323,16 @@ test('works with custom serialize', async (t) => {
 
   const res = await Promise.all([p1, p2])
 
-  t.same(res, [
+  assert.deepEqual(res, [
     { k: 42 },
     { k: 24 }
   ])
+  assert.equal(functionCalled, 1)
 
-  t.same(Object.keys(cache[kValues].fetchSomething.ids), ['24', '42'])
+  assert.deepEqual(Object.keys(cache[kValues].fetchSomething.ids), ['24', '42'])
 })
 
-test('works with same args', async (t) => {
+test('works with same args', async () => {
   const factory = new Factory()
 
   factory.add('mul10', async (queries) => queries.map(q => q * 10))
@@ -349,10 +350,10 @@ test('works with same args', async (t) => {
     cache.mul10(3)
   ])
 
-  t.same(r, [10, 20, 10, 30, 20, 20, 10, 30])
+  assert.deepEqual(r, [10, 20, 10, 30, 20, 20, 10, 30])
 })
 
-test('concurrent requests without cache', async (t) => {
+test('concurrent requests without cache', async () => {
   const factory = new Factory()
   const users = { 1: 'Alice', 2: 'Barbara' }
 
@@ -386,7 +387,7 @@ test('concurrent requests without cache', async (t) => {
     ])
   ])
 
-  t.equal(calls, 1)
-  t.equal(batch, 3)
-  t.same(r, [['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined], ['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined]])
+  assert.equal(calls, 1)
+  assert.equal(batch, 3)
+  assert.deepEqual(r, [['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined], ['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined]])
 })

@@ -4,7 +4,7 @@
   "description": "A cache for a single user",
   "main": "index.js",
   "scripts": {
-    "test": "standard | snazzy && tap test.js"
+    "test": "eslint . && node --test test.js"
   },
   "repository": {
     "type": "git",
@@ -21,10 +21,9 @@
   "devDependencies": {
     "@fastify/pre-commit": "^2.1.0",
     "@graphql-tools/schema": "^10.0.0",
+    "eslint": "^9.26.0",
     "graphql": "^16.8.1",
-    "snazzy": "^9.0.0",
-    "standard": "^17.1.0",
-    "tap": "^16.3.9"
+    "neostandard": "^0.12.1"
   },
   "dependencies": {
     "safe-stable-stringify": "^2.4.3"
