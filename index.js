@@ -101,17 +101,17 @@ class _Wrapper {
         // Split into batches
         for (let i = 0; i < toFetch.length; i += this.maxBatchSize) {
           const batch = toFetch.slice(i, i + this.maxBatchSize)
-          this._processBatch(batch)
+          this.processBatch(batch)
         }
       } else {
-        this._processBatch(toFetch)
+        this.processBatch(toFetch)
       }
     })
 
     return true
   }
 
-  _processBatch (batch) {
+  processBatch (batch) {
     this.func(batch.map((q) => q.args), this.ctx).then((data) => {
       if (!Array.isArray(data) && data.length !== batch.length) {
         onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
