@@ -16,7 +16,9 @@ const factory = new Factory()
 
 factory.add('fetchSomething', {
   // cache by default, set to false to just do batching
-  cache: true
+  cache: true,
+  // unlimited batch size by default, set to a number > 0 to split the batches in chunks
+  maxBatchSize: undefined,
 }, async (queries, context) => {
   console.log(queries)
   // [ 42, 24 ]
