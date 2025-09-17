@@ -112,7 +112,11 @@ class _Wrapper {
   }
 
   processBatch (batch) {
-    this.func(batch.map((q) => q.args), this.ctx).then((data) => {
+    const funcArgs = []
+    for (let i = 0; i < batch.length; i++) {
+      funcArgs.push(batch[i].args)
+    }
+    this.func(funcArgs, this.ctx).then((data) => {
       if (!Array.isArray(data) && data.length !== batch.length) {
         onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
         return
