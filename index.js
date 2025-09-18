@@ -33,7 +33,7 @@ class Factory {
 
     this.Cache.prototype[key] = function (id) {
       if (!this[kValues][key]) {
-        this[kValues][key] = new Wrapper(this.ctx, opts.cache)
+        this[kValues][key] = new Wrapper(this.ctx, opts.cache, opts.maxBatchSize)
       }
       return this[kValues][key].add(id)
     }
@@ -52,13 +52,14 @@ class _Cache {
 }
 
 class _Wrapper {
-  constructor (ctx, cache = true) {
+  constructor (ctx, cache = true, maxBatchSize = undefined) {
     this.ids = {}
     this.toFetch = new Map()
     this.error = null
     this.started = false
     this.ctx = ctx
     this.cache = cache
+    this.maxBatchSize = maxBatchSize
   }
 
   add (args) {
@@ -96,24 +97,40 @@ class _Wrapper {
       const toFetch = Array.from(this.toFetch.values())
       this.toFetch = new Map()
 
-      this.func(toFetch.map((q) => q.args), this.ctx).then((data) => {
-        if (!Array.isArray(data) && data.length !== toFetch.length) {
-          onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
-          return
+      if (this.maxBatchSize && toFetch.length > this.maxBatchSize) {
+        // Split into batches
+        for (let i = 0; i < toFetch.length; i += this.maxBatchSize) {
+          const batch = toFetch.slice(i, i + this.maxBatchSize)
+          this.processBatch(batch)
         }
-        for (let i = 0; i < toFetch.length; i++) {
-          toFetch[i].resolve(data[i])
-        }
-      }, onError)
-
-      function onError (err) {
-        for (let i = 0; i < toFetch.length; i++) {
-          toFetch[i].reject(err)
-        }
+      } else {
+        this.processBatch(toFetch)
       }
     })
 
     return true
+  }
+
+  processBatch (batch) {
+    const funcArgs = []
+    for (let i = 0; i < batch.length; i++) {
+      funcArgs.push(batch[i].args)
+    }
+    this.func(funcArgs, this.ctx).then((data) => {
+      if (!Array.isArray(data) && data.length !== batch.length) {
+        onError(new Error(`The Number of elements in the response for ${this.key} does not match`))
+        return
+      }
+      for (let i = 0; i < batch.length; i++) {
+        batch[i].resolve(data[i])
+      }
+    }, onError)
+
+    function onError (err) {
+      for (let i = 0; i < batch.length; i++) {
+        batch[i].reject(err)
+      }
+    }
   }
 }
 

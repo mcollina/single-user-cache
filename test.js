@@ -391,3 +391,73 @@ test('concurrent requests without cache', async () => {
   assert.equal(batch, 3)
   assert.deepEqual(r, [['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined], ['Alice', 'Barbara', undefined, 'Alice', 'Barbara', undefined]])
 })
+
+test('create a Factory that batches in slices', async () => {
+  let functionCalled = 0
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', { maxBatchSize: 2 }, async (queries) => {
+    functionCalled++
+
+    if (functionCalled === 1) {
+      assert.deepEqual(queries, [42, 24])
+    } else {
+      assert.deepEqual(queries, [420, 240])
+    }
+    return queries.map((k) => {
+      return { k }
+    })
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(24)
+  const p3 = cache.fetchSomething(420)
+  const p4 = cache.fetchSomething(240)
+
+  const res = await Promise.all([p1, p2, p3, p4])
+
+  assert.deepEqual(res, [
+    { k: 42 },
+    { k: 24 },
+    { k: 420 },
+    { k: 240 },
+  ])
+  assert.equal(functionCalled, 2)
+})
+
+test('create a Factory that batches in slices with a partial page', async () => {
+  let functionCalled = 0
+
+  const factory = new Factory()
+
+  factory.add('fetchSomething', { maxBatchSize: 2 }, async (queries) => {
+    functionCalled++
+
+    if (functionCalled === 1) {
+      assert.deepEqual(queries, [42, 24])
+    } else {
+      assert.deepEqual(queries, [420])
+    }
+    return queries.map((k) => {
+      return { k }
+    })
+  })
+
+  const cache = factory.create()
+
+  const p1 = cache.fetchSomething(42)
+  const p2 = cache.fetchSomething(24)
+  const p3 = cache.fetchSomething(420)
+
+  const res = await Promise.all([p1, p2, p3])
+
+  assert.deepEqual(res, [
+    { k: 42 },
+    { k: 24 },
+    { k: 420 },
+  ])
+  assert.equal(functionCalled, 2)
+})
