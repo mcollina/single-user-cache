@@ -37,6 +37,8 @@ class Factory {
       }
       return this[kValues][key].add(id)
     }
+
+    return this
   }
 
   create (ctx) {

@@ -2,9 +2,10 @@
   "name": "single-user-cache",
   "version": "2.0.0",
   "description": "A cache for a single user",
+  "types": "index.d.ts",
   "main": "index.js",
   "scripts": {
-    "test": "eslint . && node --test test.js"
+    "test": "eslint . && node --test test.js && tsd"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,8 @@
     "eslint": "^9.26.0",
     "graphql": "^16.8.1",
     "mitata": "^1.0.34",
-    "neostandard": "^0.12.1"
+    "neostandard": "^0.12.1",
+    "tsd": "^0.33.0"
   },
   "dependencies": {
     "safe-stable-stringify": "^2.4.3"
